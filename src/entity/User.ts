@@ -5,21 +5,12 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
+  @Column()
   firstName: string;
 
-  @Column({ nullable: true })
+  @Column()
   lastName: string;
 
-  @Column({ nullable: true })
-  age: number;
-
-  @Column({ nullable: true })
-  gender: string;
-
-  @Column({ nullable: true })
-  city: string;
-
-  @Column({ nullable: true })
-  country: string;
+  @Column({ unique: true })
+  email: string;
 }
