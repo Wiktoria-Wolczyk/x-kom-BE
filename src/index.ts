@@ -37,7 +37,11 @@ app.get("/users", async (request, response) => {
 app.get("/users/:id", async (request, response) => {
   const id = request.params.id;
   const userID = +id;
-  const user = await usersRepository.findOneBy({ id: userID });
+  // const user = await usersRepository.findOneBy({ id: userID });
+  const user = await usersRepository
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: userID })
+    .getOne();
 
   response.status(200).json({
     status: "user by id",
