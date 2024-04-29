@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
 } from "typeorm";
+import { User } from "./User";
+import { Product } from "./Product";
 
 @Entity()
 export class Order {
@@ -22,4 +26,10 @@ export class Order {
 
   @Column()
   status: string;
+
+  @ManyToOne(() => User, (user) => user.orders)
+  user: User;
+
+  @OneToMany(() => Product, (product) => product.order)
+  products: Product[];
 }
