@@ -4,8 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
+  OneToOne,
   OneToMany,
+  JoinColumn,
+  ManyToOne,
 } from "typeorm";
 import { User } from "./User";
 import { Product } from "./Product";
@@ -21,7 +23,7 @@ export class Order {
   @UpdateDateColumn()
   updateDate: Date;
 
-  @Column()
+  @Column({ nullable: true })
   couponCode: string;
 
   @Column()

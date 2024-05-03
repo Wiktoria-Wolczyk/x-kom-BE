@@ -31,21 +31,21 @@ router.get("/:id", async (request, response) => {
   });
 });
 
-router.post("/", async (request, response) => {
-  let body = request.body;
-  let newUser = new User();
+// router.post("/", async (request, response) => {
+//   let body = request.body;
+//   let newUser = new User();
 
-  newUser.firstName = body.firstName;
-  newUser.lastName = body.lastName;
-  newUser.email = body.email;
+//   newUser.firstName = body.firstName;
+//   newUser.lastName = body.lastName;
+//   newUser.email = body.email;
 
-  const addedUser = await AppDataSource.manager.save(newUser);
+//   const addedUser = await AppDataSource.manager.save(newUser);
 
-  response.status(201).json({
-    status: "created",
-    message: addedUser,
-  });
-});
+//   response.status(201).json({
+//     status: "created",
+//     message: addedUser,
+//   });
+// });
 
 router.delete("/:id", async (request, response) => {
   const id = request.params.id;

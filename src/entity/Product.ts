@@ -21,6 +21,9 @@ export class Product {
   @Column()
   category: string;
 
+  @Column()
+  brand: string;
+
   @ManyToOne(() => Order, (order) => order.products)
   order: Order;
 }

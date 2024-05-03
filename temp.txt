@@ -1,0 +1,6 @@
+Relations:
+
+User - Order  One-to-Many
+Order-Product One-to-Many 
+
+do order przypisac usera i produkty

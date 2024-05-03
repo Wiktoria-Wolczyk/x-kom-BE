@@ -2,8 +2,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany,
+  OneToOne,
   DataSource,
+  OneToMany,
 } from "typeorm";
 import { Order } from "./Order";
 

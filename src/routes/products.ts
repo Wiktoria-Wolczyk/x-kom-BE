@@ -22,7 +22,7 @@ router.get("/:id", async (request, response) => {
   const productID = +id;
   const product = await productsRepository
     .createQueryBuilder("user")
-    .where("user.id = :id", { id: productID })
+    .where("product.id = :id", { id: productID })
     .getOne();
 
   response.status(200).json({
@@ -40,6 +40,7 @@ router.post("/", async (request, response) => {
   newProduct.discountedPrice = body.discountedPrice;
   newProduct.available = body.available;
   newProduct.category = body.category;
+  newProduct.brand = body.brand;
 
   const addedProduct = await AppDataSource.manager.save(newProduct);
 
@@ -79,7 +80,7 @@ router.put("/:id", async (request, response) => {
   const updatedProduct = await productsRepository.save(productToUpdate);
 
   response.status(200).json({
-    status: "user updated",
+    status: "product updated",
     message: updatedProduct,
   });
 });
