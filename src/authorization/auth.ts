@@ -47,26 +47,40 @@ router.post("/forgot-password", async (request, response) => {
   // wysylam link dla użytkownika do zmiany hasła
 });
 
-router.put("/new-password", async (request, response) => {
-  const { newPassword, confirmPassword } = request.body;
-  console.log("confirmPassword", request.body.confirmPassword);
+router.put("/new-password/:id?", async (request, response) => {
+  const body = request.body;
+  const { newPassword, confirmPassword } = body;
+  const id = request.query.id;
+  const userID = +id;
 
   if (
-    newPassword === confirmPassword &&
-    newPassword.length !== 0 &&
-    confirmPassword.length !== 0
+    !newPassword ||
+    !confirmPassword ||
+    newPassword.length === 0 ||
+    confirmPassword.length === 0
   ) {
+    response.status(400).json({
+      status: "failed",
+      message: "password cannot be empty",
+    });
+  }
+
+  if (newPassword === confirmPassword) {
+    let user = await usersRepository.findOneBy({ id: userID });
+    user.password = newPassword;
+
+    await usersRepository.save(user);
+
     response.status(200).json({
       status: "success",
       message: "password is set",
     });
   } else {
-    response.status(204);
+    response.status(400).json({
+      status: "failed",
+      message: "password and confirmPassword are not correct",
+    });
   }
-
-  //3 elsy jak nie pasuje haslo, jak jest puste haslo, jak jest puste confirm
-  //musze sprawdzic czy newPassword === confirmPassword
-  //trzeba przypisac do użytkownika
 });
 
 export default router;

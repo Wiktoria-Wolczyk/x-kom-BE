@@ -31,21 +31,25 @@ router.get("/:id", async (request, response) => {
   });
 });
 
-// router.post("/", async (request, response) => {
-//   let body = request.body;
-//   let newUser = new User();
+router.post("/", async (request, response) => {
+  let body = request.body;
+  console.log("body", body);
+  let newUser = new User();
 
-//   newUser.firstName = body.firstName;
-//   newUser.lastName = body.lastName;
-//   newUser.email = body.email;
+  newUser.firstName = body.firstName;
+  newUser.lastName = body.lastName;
+  newUser.email = body.email;
+  newUser.password = body.password;
 
-//   const addedUser = await AppDataSource.manager.save(newUser);
+  console.log("newpassword", newUser.password);
 
-//   response.status(201).json({
-//     status: "created",
-//     message: addedUser,
-//   });
-// });
+  const addedUser = await AppDataSource.manager.save(newUser);
+
+  response.status(201).json({
+    status: "created",
+    message: addedUser,
+  });
+});
 
 router.delete("/:id", async (request, response) => {
   const id = request.params.id;
@@ -64,16 +68,18 @@ router.delete("/:id", async (request, response) => {
 
 router.put("/:id", async (request, response) => {
   const body = request.body;
-
+  console.log("body", body);
   const id = request.params.id;
   const userID = +id;
 
   let userToUpdate = await usersRepository.findOneBy({ id: userID });
 
+  delete body.password;
+  delete body.id;
+
   userToUpdate = {
     ...userToUpdate,
     ...body,
-    id: userID,
   };
 
   const updatedUser = await usersRepository.save(userToUpdate);
