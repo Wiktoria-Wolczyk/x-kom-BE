@@ -3,23 +3,28 @@ import { hashSync, compare, hash, compareSync } from "bcrypt";
 const router = express.Router();
 import { User } from "../entity/User";
 import { AppDataSource } from "../database/data-source";
+import * as jwt from "jsonwebtoken";
 
 const usersRepository = AppDataSource.getRepository(User);
 
 router.post("/login", async (request, response) => {
-  const body = request.body;
+  const { email, password } = request.body;
+  const findUser = await usersRepository.findOneBy({ email });
 
-  //1
-  const userEmail = body.email;
-  // console.log("body", body);
-  const userPassword = body.password;
-  //2
-  const findUser = await usersRepository.findOneBy({ email: userEmail });
-  // console.log("findUser", findUser);
-  //3
+  const comparePassword = compareSync(password, findUser.password);
+  if (!comparePassword) {
+    response.status(404).json({
+      status: "failed",
+      message: "authorization failed",
+    });
+  }
 
-  const comparePassword = compareSync(userPassword, findUser.password);
-  console.log("comparePassword", comparePassword);
+  const token = jwt.sign(JSON.stringify(findUser), process.env.JWT_SECRET);
+
+  response.status(200).json({
+    status: "success",
+    message: token,
+  });
 
   // 1. pobieram body
   // 2. pobierasz usera po emailu z bazy - find user po mailu
@@ -45,7 +50,7 @@ router.post("/register", async (request, response) => {
   const addedUser = await usersRepository.save(newUser);
 
   response.status(201).json({
-    status: "created",
+    status: "success",
     message: addedUser,
   });
 });
@@ -58,12 +63,12 @@ router.post("/forgot-password", async (request, response) => {
 
   if (userMailToFind) {
     response.status(200).json({
-      status: "user exist",
+      status: "success",
       message: "/new-password",
     });
   } else {
     response.status(404).json({
-      status: "not found user",
+      status: "failed",
       message: "user don't exist",
     });
   }
