@@ -6,6 +6,7 @@ import users from "./routes/users";
 import products from "./routes/products";
 import orders from "./routes/orders";
 import auth from "../src/authorization/auth";
+import * as jwt from "jsonwebtoken";
 
 const app = express();
 const port = 3000;
@@ -15,6 +16,25 @@ AppDataSource.initialize()
   .catch((err) =>
     console.error("Error during Data Source initialization:", err)
   );
+
+app.use((request, response, next) => {
+  try {
+    const authorizationString = request.headers.authorization; // z Bearerem
+    const token = authorizationString.split(" ")[1];
+
+    const verification = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (verification) {
+      next();
+    }
+  } catch (error) {
+    console.error(error);
+    response.status(404).json({
+      status: "failed",
+      message: "authorization failed",
+    });
+  }
+});
 
 app.use(express.json());
 app.use("/users", users);
