@@ -7,8 +7,11 @@ import products from "./routes/products";
 import orders from "./routes/orders";
 import auth from "../src/authorization/auth";
 import * as jwt from "jsonwebtoken";
+import { tokenVerification } from "./middlewares/authMiddleware";
 
 const app = express();
+app.use(express.json());
+
 const port = 3000;
 
 AppDataSource.initialize()
@@ -17,30 +20,15 @@ AppDataSource.initialize()
     console.error("Error during Data Source initialization:", err)
   );
 
-app.use((request, response, next) => {
-  try {
-    const authorizationString = request.headers.authorization; // z Bearerem
-    const token = authorizationString.split(" ")[1];
-
-    const verification = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (verification) {
-      next();
-    }
-  } catch (error) {
-    console.error(error);
-    response.status(404).json({
-      status: "failed",
-      message: "authorization failed",
-    });
-  }
-});
-
-app.use(express.json());
-app.use("/users", users);
 app.use("/products", products);
 app.use("/orders", orders);
 app.use("/auth", auth);
+
+app.use((request, response, next) => {
+  tokenVerification(request, response, next);
+});
+
+app.use("/users", users);
 
 app.listen(port, () => {
   console.log(`Shop backend is listening on port: ${port}`);

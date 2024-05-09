@@ -19,18 +19,18 @@ router.post("/login", async (request, response) => {
     });
   }
 
-  const token = jwt.sign(JSON.stringify(findUser), process.env.JWT_SECRET);
+  const token = jwt.sign(
+    JSON.parse(JSON.stringify(findUser)),
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "4h",
+    }
+  );
 
   response.status(200).json({
     status: "success",
     message: token,
   });
-
-  // 1. pobieram body
-  // 2. pobierasz usera po emailu z bazy - find user po mailu
-  // 3. porownuje wpisane haslo z zahashowanym - user.password
-  // 4.1. jesli sie zgadza -> zaloguj, czyli zwroc 'true'
-  // 4.2. jesli sie NIE zgadza -> zwroc 'false'
 });
 
 router.post("/register", async (request, response) => {

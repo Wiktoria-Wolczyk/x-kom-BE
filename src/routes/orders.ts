@@ -4,9 +4,39 @@ import { AppDataSource } from "../database/data-source";
 import { Order } from "../entity/Order";
 import { User } from "../entity/User";
 import { Product } from "../entity/Product";
+import * as jwt from "jsonwebtoken";
+import { tokenVerification } from "../middlewares/authMiddleware";
 
 const ordersRepository = AppDataSource.getRepository(Order);
 const usersRepository = AppDataSource.getRepository(User);
+
+router.post("/", async (request, response) => {
+  const body = request.body;
+  const { userID, productsID: productsIDArray } = body;
+
+  let newOrder = new Order();
+
+  const assignedUser = await usersRepository.findOneBy({ id: userID });
+  const arrayOfProducts = productsIDArray.map((el) => ({ id: el }));
+
+  newOrder.createDate = body.createDate;
+  newOrder.updateDate = body.updateDate;
+  newOrder.couponCode = body.couponCode;
+  newOrder.status = body.status;
+  newOrder.user = assignedUser;
+  newOrder.products = arrayOfProducts;
+
+  const addedOrder = await AppDataSource.manager.save(newOrder);
+
+  response.status(201).json({
+    status: "created",
+    message: addedOrder,
+  });
+});
+
+router.use((request, response, next) => {
+  tokenVerification(request, response, next);
+});
 
 router.get("/", async (request, response) => {
   const [orders, count] = await ordersRepository.findAndCount();
@@ -37,30 +67,6 @@ router.get("/:id", async (request, response) => {
   response.status(200).json({
     status: "success",
     message: order,
-  });
-});
-
-router.post("/", async (request, response) => {
-  const body = request.body;
-  const { userID, productsID: productsIDArray } = body;
-
-  let newOrder = new Order();
-
-  const assignedUser = await usersRepository.findOneBy({ id: userID });
-  const arrayOfProducts = productsIDArray.map((el) => ({ id: el }));
-
-  newOrder.createDate = body.createDate;
-  newOrder.updateDate = body.updateDate;
-  newOrder.couponCode = body.couponCode;
-  newOrder.status = body.status;
-  newOrder.user = assignedUser;
-  newOrder.products = arrayOfProducts;
-
-  const addedOrder = await AppDataSource.manager.save(newOrder);
-
-  response.status(201).json({
-    status: "created",
-    message: addedOrder,
   });
 });
 

@@ -2,6 +2,9 @@ import * as express from "express";
 const router = express.Router();
 import { AppDataSource } from "../database/data-source";
 import { Product } from "../entity/Product";
+import { request } from "http";
+import * as jwt from "jsonwebtoken";
+import { tokenVerification } from "../middlewares/authMiddleware";
 
 const productsRepository = AppDataSource.getRepository(Product);
 
@@ -50,18 +53,35 @@ router.post("/", async (request, response) => {
   });
 });
 
-router.delete("/:id", async (request, response) => {
-  const id = request.params.id;
-  const productID = +id;
+router.delete(
+  "/:id",
+  (request, response, next) => {
+    tokenVerification(request, response, next);
+  },
+  async (request, response) => {
+    const id = request.params.id;
+    const productID = +id;
 
-  const productsRepository = AppDataSource.getRepository(Product);
-  const deletedProduct = await productsRepository.delete(productID);
+    const productsRepository = AppDataSource.getRepository(Product);
+    const deletedProduct = await productsRepository.delete(productID);
 
-  response.status(200).json({
-    status: "success",
-    message: deletedProduct,
-  });
-});
+    response.status(200).json({
+      status: "success",
+      message: deletedProduct,
+    });
+  }
+);
+
+// app.get(
+//   "/user/:id",
+//   (req, res, next) => {
+//     console.log("ID:", req.params.id);
+//     next();
+//   },
+//   (req, res, next) => {
+//     res.send("User Info");
+//   }
+// );
 
 router.put("/:id", async (request, response) => {
   const body = request.body;
@@ -83,6 +103,12 @@ router.put("/:id", async (request, response) => {
     status: "product updated",
     message: updatedProduct,
   });
+});
+
+router.get("/page/:page/limit/:limit", async (request, response) => {
+  const page = request.params.page;
+  const limit = request.params.limit;
+  console.log("page and limit", page, limit);
 });
 
 export default router;
