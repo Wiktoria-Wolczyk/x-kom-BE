@@ -5,6 +5,7 @@ import { Product } from "../entity/Product";
 import { request } from "http";
 import * as jwt from "jsonwebtoken";
 import { tokenVerification } from "../middlewares/authMiddleware";
+import { Like } from "typeorm";
 
 const productsRepository = AppDataSource.getRepository(Product);
 
@@ -117,6 +118,19 @@ router.get("/page/:page/limit/:limit", async (request, response) => {
       data: products,
       count: count,
     },
+  });
+});
+
+router.post("/findproduct", async (request, response) => {
+  const searchText = request.body.searchText;
+
+  const findProducts = await productsRepository.findBy({
+    name: Like(`%${searchText}%`),
+  });
+
+  response.status(200).json({
+    status: "success",
+    message: findProducts,
   });
 });
 
