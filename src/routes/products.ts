@@ -149,4 +149,24 @@ router.post("/search/page/:page/limit/:limit", async (request, response) => {
   });
 });
 
+router.post("/filter/page/:page/limit/:limit", async (request, response) => {
+  const page = +request.params.page;
+  const limit = +request.params.limit;
+
+  const categories = request.body.category;
+
+  const [products, count] = await productsRepository
+    .createQueryBuilder("product")
+    .where("product.category IN (:...categories)", { categories: categories })
+    .getManyAndCount();
+
+  response.status(200).json({
+    status: "success",
+    message: {
+      data: products,
+      count: count,
+    },
+  });
+});
+
 export default router;
