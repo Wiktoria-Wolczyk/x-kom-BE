@@ -17,20 +17,20 @@ router.post("/login", async (request, response) => {
       status: "failed",
       message: "authorization failed",
     });
+  } else {
+    const token = jwt.sign(
+      JSON.parse(JSON.stringify(findUser)),
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "8h",
+      }
+    );
+
+    response.status(200).json({
+      status: "success",
+      message: token,
+    });
   }
-
-  const token = jwt.sign(
-    JSON.parse(JSON.stringify(findUser)),
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "4h",
-    }
-  );
-
-  response.status(200).json({
-    status: "success",
-    message: token,
-  });
 });
 
 router.post("/register", async (request, response) => {

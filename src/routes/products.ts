@@ -72,17 +72,6 @@ router.delete(
   }
 );
 
-// app.get(
-//   "/user/:id",
-//   (req, res, next) => {
-//     console.log("ID:", req.params.id);
-//     next();
-//   },
-//   (req, res, next) => {
-//     res.send("User Info");
-//   }
-// );
-
 router.put("/:id", async (request, response) => {
   const body = request.body;
 
@@ -106,9 +95,29 @@ router.put("/:id", async (request, response) => {
 });
 
 router.get("/page/:page/limit/:limit", async (request, response) => {
-  const page = request.params.page;
-  const limit = request.params.limit;
-  console.log("page and limit", page, limit);
+  const page = +request.params.page;
+  const limit = +request.params.limit;
+
+  if (page < 0 || limit < 0) {
+    return response.status(400).json({
+      status: "failed",
+      message: "Invalid input§",
+    });
+  }
+
+  const [products, count] = await productsRepository
+    .createQueryBuilder("product")
+    .skip(limit * (page - 1))
+    .take(limit)
+    .getManyAndCount();
+
+  response.status(200).json({
+    status: "success",
+    message: {
+      data: products,
+      count: count,
+    },
+  });
 });
 
 export default router;
