@@ -121,16 +121,31 @@ router.get("/page/:page/limit/:limit", async (request, response) => {
   });
 });
 
-router.post("/findproduct", async (request, response) => {
+router.post("/search/page/:page/limit/:limit", async (request, response) => {
+  const page = +request.params.page;
+  const limit = +request.params.limit;
   const searchText = request.body.searchText;
 
-  const findProducts = await productsRepository.findBy({
-    name: Like(`%${searchText}%`),
-  });
+  if (page < 0 || limit < 0) {
+    return response.status(400).json({
+      status: "failed",
+      message: "Invalid input",
+    });
+  }
+
+  const [products, count] = await productsRepository
+    .createQueryBuilder("product")
+    .where({ name: Like(`%${searchText}%`) })
+    .skip(limit * (page - 1))
+    .take(limit)
+    .getManyAndCount();
 
   response.status(200).json({
     status: "success",
-    message: findProducts,
+    message: {
+      data: products,
+      count: count,
+    },
   });
 });
 
