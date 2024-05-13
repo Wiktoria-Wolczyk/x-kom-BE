@@ -9,22 +9,40 @@ import { tokenVerification } from "../middlewares/authMiddleware";
 
 const ordersRepository = AppDataSource.getRepository(Order);
 const usersRepository = AppDataSource.getRepository(User);
+const productsRepository = AppDataSource.getRepository(Product);
 
 router.post("/", async (request, response) => {
   const body = request.body;
-  const { userID, productsID: productsIDArray } = body;
+  const { userID, products: productsIDArray } = body;
 
   let newOrder = new Order();
 
   const assignedUser = await usersRepository.findOneBy({ id: userID });
-  const arrayOfProducts = productsIDArray.map((el) => ({ id: el }));
+
+  let sum = 0;
+
+  let productsArray = await Promise.all(
+    productsIDArray.map(async (el) => {
+      let productsByID = await productsRepository.findOneBy({
+        id: el.id,
+      });
+
+      let countOfQuantity = el.quantity;
+
+      let discountedPrice = productsByID.discountedPrice * countOfQuantity;
+
+      sum += discountedPrice;
+      return productsByID;
+    })
+  );
 
   newOrder.createDate = body.createDate;
   newOrder.updateDate = body.updateDate;
   newOrder.couponCode = body.couponCode;
-  newOrder.status = body.status;
+  newOrder.status = "in realization";
+  newOrder.price = sum;
   newOrder.user = assignedUser;
-  newOrder.products = arrayOfProducts;
+  newOrder.products = productsArray;
 
   const addedOrder = await AppDataSource.manager.save(newOrder);
 

@@ -26,8 +26,11 @@ export class Order {
   @Column({ nullable: true })
   couponCode: string;
 
-  @Column()
+  @Column({ nullable: true })
   status: string;
+
+  @Column({ nullable: true })
+  price: number;
 
   @ManyToOne(() => User, (user) => user.orders)
   user: User;
