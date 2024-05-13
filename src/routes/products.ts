@@ -6,6 +6,7 @@ import { request } from "http";
 import * as jwt from "jsonwebtoken";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { Like } from "typeorm";
+import { Between } from "typeorm";
 
 const productsRepository = AppDataSource.getRepository(Product);
 
@@ -154,10 +155,47 @@ router.post("/filter/page/:page/limit/:limit", async (request, response) => {
   const limit = +request.params.limit;
 
   const categories = request.body.category;
+  const brands = request.body.brand;
+  const priceStartKey = request.body.priceStart;
+  const priceEndKey = request.body.priceEnd;
 
-  const [products, count] = await productsRepository
-    .createQueryBuilder("product")
-    .where("product.category IN (:...categories)", { categories: categories })
+  let baseQuery = await productsRepository.createQueryBuilder("product");
+
+  if (categories && categories.length > 0) {
+    baseQuery = baseQuery.andWhere("product.category IN (:...categories)", {
+      categories: categories,
+    });
+  }
+
+  if (brands && brands.length > 0) {
+    baseQuery = baseQuery.andWhere("product.brand IN (:...brands)", {
+      brands: brands,
+    });
+  }
+
+  if (!priceEndKey && priceStartKey && priceStartKey > 0) {
+    baseQuery = baseQuery.andWhere("product.discountedPrice > :priceStartKey", {
+      priceStartKey: priceStartKey,
+    });
+  }
+
+  if (!priceStartKey && priceEndKey && priceEndKey > 0) {
+    baseQuery = baseQuery.andWhere("product.discountedPrice < :priceEndKey", {
+      priceEndKey: priceEndKey,
+    });
+  }
+
+  if (priceStartKey && priceEndKey) {
+    baseQuery = baseQuery.andWhere(
+      "product.discountedPrice BETWEEN :start AND :end",
+      {
+        start: priceStartKey,
+        end: priceEndKey,
+      }
+    );
+  }
+
+  const [products, count] = await baseQuery
     .skip(limit * (page - 1))
     .take(limit)
     .getManyAndCount();
