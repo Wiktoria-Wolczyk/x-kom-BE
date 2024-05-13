@@ -158,6 +158,8 @@ router.post("/filter/page/:page/limit/:limit", async (request, response) => {
   const [products, count] = await productsRepository
     .createQueryBuilder("product")
     .where("product.category IN (:...categories)", { categories: categories })
+    .skip(limit * (page - 1))
+    .take(limit)
     .getManyAndCount();
 
   response.status(200).json({
