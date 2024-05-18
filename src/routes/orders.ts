@@ -6,10 +6,12 @@ import { User } from "../entity/User";
 import { Product } from "../entity/Product";
 import * as jwt from "jsonwebtoken";
 import { tokenVerification } from "../middlewares/authMiddleware";
+import { CouponCode } from "../entity/CouponCode";
 
 const ordersRepository = AppDataSource.getRepository(Order);
 const usersRepository = AppDataSource.getRepository(User);
 const productsRepository = AppDataSource.getRepository(Product);
+const couponRepository = AppDataSource.getRepository(CouponCode);
 
 router.post("/", async (request, response) => {
   const body = request.body;
@@ -18,6 +20,8 @@ router.post("/", async (request, response) => {
   let newOrder = new Order();
 
   const assignedUser = await usersRepository.findOneBy({ id: userID });
+
+  let findCoupon = await couponRepository.findOneBy({ code: body.couponCode });
 
   let sum = 0;
 
@@ -36,11 +40,25 @@ router.post("/", async (request, response) => {
     })
   );
 
+  let valueOfCoupon = findCoupon.value; // liczba
+  let percentageValueOfCoupon = findCoupon.percentageValue; // procent
+
+  let newSumValue = sum - valueOfCoupon; //liczba
+  let mathSumPercentageValue = (sum * percentageValueOfCoupon) / 100; // procent
+  let newSumPercentageValue = sum - mathSumPercentageValue;
+
+  if (body.couponCode && findCoupon.value) {
+    newOrder.price = newSumValue;
+  } else if (body.couponCode && findCoupon.percentageValue) {
+    newOrder.price = newSumPercentageValue;
+  } else {
+    newOrder.price = sum;
+  }
+
   newOrder.createDate = body.createDate;
   newOrder.updateDate = body.updateDate;
   newOrder.couponCode = body.couponCode;
   newOrder.status = "in realization";
-  newOrder.price = sum;
   newOrder.user = assignedUser;
   newOrder.products = productsArray;
 

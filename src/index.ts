@@ -6,11 +6,15 @@ import users from "./routes/users";
 import products from "./routes/products";
 import orders from "./routes/orders";
 import auth from "../src/authorization/auth";
+import couponCodes from "../src/routes/couponsCodes";
 import * as jwt from "jsonwebtoken";
 import { tokenVerification } from "./middlewares/authMiddleware";
+import couponsCodes from "../src/routes/couponsCodes";
+import * as cors from "cors";
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const port = 3000;
 
@@ -23,6 +27,7 @@ AppDataSource.initialize()
 app.use("/products", products);
 app.use("/orders", orders);
 app.use("/auth", auth);
+app.use("/coupons", couponsCodes);
 
 app.use((request, response, next) => {
   tokenVerification(request, response, next);

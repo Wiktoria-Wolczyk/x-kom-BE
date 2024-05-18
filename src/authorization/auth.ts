@@ -22,7 +22,7 @@ router.post("/login", async (request, response) => {
       JSON.parse(JSON.stringify(findUser)),
       process.env.JWT_SECRET,
       {
-        expiresIn: "8h",
+        expiresIn: "10h",
       }
     );
 
