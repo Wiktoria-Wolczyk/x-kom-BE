@@ -25,8 +25,9 @@ router.get("/", async (request, response) => {
 router.get("/:id", async (request, response) => {
   const id = request.params.id;
   const productID = +id;
+
   const product = await productsRepository
-    .createQueryBuilder("user")
+    .createQueryBuilder("product")
     .where("product.id = :id", { id: productID })
     .getOne();
 
@@ -206,6 +207,21 @@ router.post("/filter/page/:page/limit/:limit", async (request, response) => {
       data: products,
       count: count,
     },
+  });
+});
+
+router.get("/categories/count", async (request, response) => {
+  const categories = await productsRepository
+    .createQueryBuilder("product")
+    .select("product.category", "category")
+    .addSelect("COUNT(product.id)", "count")
+    .groupBy("category")
+    .orderBy("count", "DESC")
+    .getRawMany();
+
+  response.status(200).json({
+    status: "success",
+    message: categories,
   });
 });
 
