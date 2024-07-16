@@ -2,11 +2,8 @@ import * as express from "express";
 const router = express.Router();
 import { AppDataSource } from "../database/data-source";
 import { Product } from "../entity/Product";
-import { request } from "http";
-import * as jwt from "jsonwebtoken";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { Like } from "typeorm";
-import { Between } from "typeorm";
 
 const productsRepository = AppDataSource.getRepository(Product);
 
@@ -38,8 +35,8 @@ router.get("/:id", async (request, response) => {
 });
 
 router.post("/", async (request, response) => {
-  let body = request.body;
-  let newProduct = new Product();
+  const body = request.body;
+  const newProduct = new Product();
 
   newProduct.name = body.name;
   newProduct.price = body.price;
@@ -72,7 +69,7 @@ router.delete(
       status: "success",
       message: deletedProduct,
     });
-  }
+  },
 );
 
 router.put("/:id", async (request, response) => {
@@ -192,7 +189,7 @@ router.post("/filter/page/:page/limit/:limit", async (request, response) => {
       {
         start: priceStartKey,
         end: priceEndKey,
-      }
+      },
     );
   }
 

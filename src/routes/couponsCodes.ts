@@ -1,20 +1,14 @@
 import * as express from "express";
 const router = express.Router();
 import { AppDataSource } from "../database/data-source";
-import { Order } from "../entity/Order";
-import { User } from "../entity/User";
-import { Product } from "../entity/Product";
 import { CouponCode } from "../entity/CouponCode";
 
-const ordersRepository = AppDataSource.getRepository(Order);
-const usersRepository = AppDataSource.getRepository(User);
-const productsRepository = AppDataSource.getRepository(Product);
 const couponRepository = AppDataSource.getRepository(CouponCode);
 
 router.post("/", async (request, response) => {
   const body = request.body;
 
-  let newCouponCode = new CouponCode();
+  const newCouponCode = new CouponCode();
 
   newCouponCode.createDate = body.createDate;
   newCouponCode.updateDate = body.updateDate;
@@ -50,7 +44,7 @@ router.get("/", async (request, response) => {
 router.get("/:id", async (request, response) => {
   const couponID = +request.params.id;
 
-  let findCoupon = await couponRepository.findOneBy({ id: couponID });
+  const findCoupon = await couponRepository.findOneBy({ id: couponID });
 
   response.status(200).json({
     status: "success",

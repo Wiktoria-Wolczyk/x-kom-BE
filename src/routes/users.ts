@@ -2,6 +2,7 @@ import * as express from "express";
 const router = express.Router();
 import { AppDataSource } from "../database/data-source";
 import { User } from "../entity/User";
+import { hashSync } from "bcrypt";
 
 const usersRepository = AppDataSource.getRepository(User);
 
@@ -32,9 +33,9 @@ router.get("/:id", async (request, response) => {
 });
 
 router.post("/", async (request, response) => {
-  let body = request.body;
+  const body = request.body;
   console.log("body", body);
-  let newUser = new User();
+  const newUser = new User();
 
   newUser.firstName = body.firstName;
   newUser.lastName = body.lastName;
@@ -81,6 +82,27 @@ router.put("/:id", async (request, response) => {
     ...userToUpdate,
     ...body,
   };
+
+  const updatedUser = await usersRepository.save(userToUpdate);
+
+  response.status(200).json({
+    status: "user updated",
+    message: updatedUser,
+  });
+});
+
+router.put("/:id/password", async (request, response) => {
+  const body = request.body;
+  console.log("body z password", body);
+  const id = request.params.id;
+  const userID = +id;
+
+  const userToUpdate = await usersRepository.findOneBy({ id: userID });
+  console.log("dddd", userToUpdate);
+
+  const hashedPassword = hashSync(body.password, 10);
+  console.log("hashedPas", hashedPassword);
+  userToUpdate.password = hashedPassword;
 
   const updatedUser = await usersRepository.save(userToUpdate);
 

@@ -1,11 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  DataSource,
-  OneToMany,
-} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { Order } from "./Order";
 
 @Entity()
@@ -24,6 +17,9 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+
+  @Column({ nullable: true })
+  avatar: string;
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];

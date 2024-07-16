@@ -4,9 +4,9 @@ import { AppDataSource } from "../database/data-source";
 import { Order } from "../entity/Order";
 import { User } from "../entity/User";
 import { Product } from "../entity/Product";
-import * as jwt from "jsonwebtoken";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { CouponCode } from "../entity/CouponCode";
+import { RequestWithUser } from "../common/interfaces";
 
 const ordersRepository = AppDataSource.getRepository(Order);
 const usersRepository = AppDataSource.getRepository(User);
@@ -17,35 +17,37 @@ router.post("/", async (request, response) => {
   const body = request.body;
   const { userID, products: productsIDArray } = body;
 
-  let newOrder = new Order();
+  const newOrder = new Order();
 
   const assignedUser = await usersRepository.findOneBy({ id: userID });
 
-  let findCoupon = await couponRepository.findOneBy({ code: body.couponCode });
+  const findCoupon = await couponRepository.findOneBy({
+    code: body.couponCode,
+  });
 
   let sum = 0;
 
-  let productsArray = await Promise.all(
+  const productsArray = await Promise.all(
     productsIDArray.map(async (el) => {
-      let productsByID = await productsRepository.findOneBy({
+      const productsByID = await productsRepository.findOneBy({
         id: el.id,
       });
 
-      let countOfQuantity = el.quantity;
+      const countOfQuantity = el.quantity;
 
-      let discountedPrice = productsByID.discountedPrice * countOfQuantity;
+      const discountedPrice = productsByID.discountedPrice * countOfQuantity;
 
       sum += discountedPrice;
       return productsByID;
-    })
+    }),
   );
 
-  let valueOfCoupon = findCoupon.value; // liczba
-  let percentageValueOfCoupon = findCoupon.percentageValue; // procent
+  const valueOfCoupon = findCoupon.value; // liczba
+  const percentageValueOfCoupon = findCoupon.percentageValue; // procent
 
-  let newSumValue = sum - valueOfCoupon; //liczba
-  let mathSumPercentageValue = (sum * percentageValueOfCoupon) / 100; // procent
-  let newSumPercentageValue = sum - mathSumPercentageValue;
+  const newSumValue = sum - valueOfCoupon; //liczba
+  const mathSumPercentageValue = (sum * percentageValueOfCoupon) / 100; // procent
+  const newSumPercentageValue = sum - mathSumPercentageValue;
 
   if (body.couponCode && findCoupon.value) {
     newOrder.price = newSumValue;
@@ -89,11 +91,12 @@ router.get("/", async (request, response) => {
 router.get("/:id", async (request, response) => {
   const orderID = +request.params.id;
 
-  const order = await ordersRepository.find({
+  const order = await ordersRepository.findOne({
     where: { id: orderID },
     relations: { user: true, products: true },
   });
 
+  console.log("or", order);
   // const order = await ordersRepository
   //   .createQueryBuilder("order")
   //   .where("order.id = :id", { id: orderID })
@@ -103,6 +106,31 @@ router.get("/:id", async (request, response) => {
   response.status(200).json({
     status: "success",
     message: order,
+  });
+});
+
+router.get("/by/user", async (request: RequestWithUser, response) => {
+  const userID = +request.user?.id;
+
+  // const findOrderByUser = await ordersRepository.findBy({ id: userID });
+
+  const ordersByUser = await ordersRepository
+    .createQueryBuilder("order")
+    .where("order.user = :id", { id: userID })
+    .leftJoinAndSelect("order.products", "products")
+    .getMany();
+
+  console.log("cccc", ordersByUser[0].products);
+
+  // const findProductsByOrder = await ordersRepository
+  //   .createQueryBuilder("order")
+  //   .where("order.products = :id", { id: order.id });
+
+  // console.log("atata", findOrderByUser);
+
+  response.status(200).json({
+    status: "success",
+    message: ordersByUser,
   });
 });
 

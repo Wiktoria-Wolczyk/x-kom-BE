@@ -1,5 +1,5 @@
 import * as express from "express";
-import { hashSync, compare, hash, compareSync } from "bcrypt";
+import { hashSync, compareSync } from "bcrypt";
 const router = express.Router();
 import { User } from "../entity/User";
 import { AppDataSource } from "../database/data-source";
@@ -9,7 +9,13 @@ const usersRepository = AppDataSource.getRepository(User);
 
 router.post("/login", async (request, response) => {
   const { email, password } = request.body;
+  console.log("1", request.body);
   const findUser = await usersRepository.findOneBy({ email });
+
+  console.log("2", findUser);
+
+  //zamierzam stworzyc obiekt w ktorym bedzie user
+  //bez hasla i ten obiekt zwrocic w odpowiedzi
 
   const comparePassword = compareSync(password, findUser.password);
   if (!comparePassword) {
@@ -23,19 +29,23 @@ router.post("/login", async (request, response) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "10h",
-      }
+      },
     );
+
+    delete findUser.password;
+
+    console.log("userInREsponse", findUser);
 
     response.status(200).json({
       status: "success",
-      message: token,
+      message: { token, user: findUser },
     });
   }
 });
 
 router.post("/register", async (request, response) => {
-  let body = request.body;
-  let newUser = new User();
+  const body = request.body;
+  const newUser = new User();
   const pass = body.password;
 
   const hashedPassword = hashSync(pass, 10); //cos z tym pass i bcryptem
@@ -97,7 +107,7 @@ router.put("/new-password/:id?", async (request, response) => {
   }
 
   if (newPassword === confirmPassword) {
-    let user = await usersRepository.findOneBy({ id: userID });
+    const user = await usersRepository.findOneBy({ id: userID });
     const hashedPassword = hashSync(newPassword, 10);
     user.password = hashedPassword;
 
