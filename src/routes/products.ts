@@ -1,22 +1,40 @@
-import * as express from "express";
+import express from "express";
 const router = express.Router();
 import { AppDataSource } from "../database/data-source";
 import { Product } from "../entity/Product";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { Like } from "typeorm";
+import NodeCache from "node-cache";
 
 const productsRepository = AppDataSource.getRepository(Product);
 
 router.get("/", async (request, response) => {
-  const [products, count] = await productsRepository.findAndCount();
+  const myCache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
 
-  response.status(200).json({
-    status: "Success",
-    message: {
-      products,
-      count,
-    },
-  });
+  const getCache = myCache.get("products");
+  const getCacheCount = myCache.get("count");
+
+  if (getCache === undefined || getCacheCount === undefined) {
+    const [products, count] = await productsRepository.findAndCount();
+    myCache.set("products", products, 10);
+    myCache.set("count", count, 10);
+
+    response.status(200).json({
+      status: "Success",
+      message: {
+        products,
+        count,
+      },
+    });
+  } else {
+    response.status(200).json({
+      status: "Success",
+      message: {
+        products: getCache,
+        count: getCacheCount,
+      },
+    });
+  }
 });
 
 router.get("/:id", async (request, response) => {

@@ -1,12 +1,12 @@
 import "dotenv/config";
-import * as express from "express";
+import express from "express";
 import { AppDataSource } from "./database/data-source";
 import users from "./routes/users";
 import products from "./routes/products";
 import orders from "./routes/orders";
 import auth from "../src/authorization/auth";
 import couponsCodes from "../src/routes/couponsCodes";
-import * as cors from "cors";
+import cors from "cors";
 import files from "./routes/files";
 
 const app = express();

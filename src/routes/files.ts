@@ -1,7 +1,7 @@
-import * as express from "express";
+import express from "express";
 const router = express.Router();
-import * as fs from "fs";
-import * as multer from "multer";
+import fs from "fs";
+import multer from "multer";
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
