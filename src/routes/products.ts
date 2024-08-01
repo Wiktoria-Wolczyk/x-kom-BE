@@ -5,36 +5,66 @@ import { Product } from "../entity/Product";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { Like } from "typeorm";
 import NodeCache from "node-cache";
+import { createClient } from "redis";
 
 const productsRepository = AppDataSource.getRepository(Product);
 
 router.get("/", async (request, response) => {
-  const myCache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
+  try {
+    const client = await createClient()
+      .on("error", (err) => console.log("Redis Client Error", err))
+      .connect();
 
-  const getCache = myCache.get("products");
-  const getCacheCount = myCache.get("count");
+    const clientProducts = await client.get("products");
+    console.log(clientProducts);
+    const clientCount = await client.get("count");
 
-  if (getCache === undefined || getCacheCount === undefined) {
-    const [products, count] = await productsRepository.findAndCount();
-    myCache.set("products", products, 10);
-    myCache.set("count", count, 10);
+    if (clientProducts === undefined || clientCount === undefined) {
+      console.log(1);
+      const [products, count] = await productsRepository.findAndCount();
+      await client.set("products", JSON.stringify(products));
+      await client.set("count", JSON.stringify(count));
 
-    response.status(200).json({
-      status: "Success",
-      message: {
-        products,
-        count,
-      },
-    });
-  } else {
-    response.status(200).json({
-      status: "Success",
-      message: {
-        products: getCache,
-        count: getCacheCount,
-      },
-    });
+      await client.disconnect();
+
+      response.status(200).json({
+        status: "Success",
+        message: {
+          products: products,
+          count: count,
+        },
+      });
+    } else {
+      console.log("else");
+
+      await client.disconnect();
+
+      response.status(200).json({
+        status: "Success",
+        message: {
+          products: JSON.parse(clientProducts),
+          count: JSON.parse(clientCount),
+        },
+      });
+    }
+  } catch (err) {
+    console.log(err);
   }
+});
+
+router.get("/random", async (request, response) => {
+  const productsToDisplay = await productsRepository
+    .createQueryBuilder()
+    .select("*")
+    .from(Product, "product")
+    .orderBy("RANDOM()")
+    .limit(3)
+    .execute();
+
+  response.status(200).json({
+    status: "Success",
+    message: productsToDisplay,
+  });
 });
 
 router.get("/:id", async (request, response) => {
