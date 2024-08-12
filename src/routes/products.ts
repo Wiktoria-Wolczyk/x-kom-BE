@@ -19,9 +19,9 @@ router.get("/", async (request, response) => {
     console.log(clientProducts);
     const clientCount = await client.get("count");
 
-    if (clientProducts === undefined || clientCount === undefined) {
-      console.log(1);
+    if (!clientProducts || !clientCount) {
       const [products, count] = await productsRepository.findAndCount();
+      console.log("products", products);
       await client.set("products", JSON.stringify(products));
       await client.set("count", JSON.stringify(count));
 
@@ -35,8 +35,6 @@ router.get("/", async (request, response) => {
         },
       });
     } else {
-      console.log("else");
-
       await client.disconnect();
 
       response.status(200).json({
@@ -53,12 +51,16 @@ router.get("/", async (request, response) => {
 });
 
 router.get("/random", async (request, response) => {
+  const objectQuery = request.query;
+
+  const numberOfProducts = Number(objectQuery.limit || 3);
+
   const productsToDisplay = await productsRepository
     .createQueryBuilder()
     .select("*")
     .from(Product, "product")
     .orderBy("RANDOM()")
-    .limit(3)
+    .limit(numberOfProducts)
     .execute();
 
   response.status(200).json({
@@ -92,8 +94,19 @@ router.post("/", async (request, response) => {
   newProduct.available = body.available;
   newProduct.category = body.category;
   newProduct.brand = body.brand;
+  newProduct.tag = body.tag;
+  newProduct.isHotShot = body.isHotShot;
+  newProduct.img = body.img;
 
   const addedProduct = await AppDataSource.manager.save(newProduct);
+
+  const redisClient = await createClient()
+    .on("error", (err) => console.log("Redis Client Error", err))
+    .connect();
+
+  await redisClient.del("products");
+  await redisClient.del("count");
+  await redisClient.disconnect();
 
   response.status(201).json({
     status: "created",
@@ -112,6 +125,14 @@ router.delete(
 
     const productsRepository = AppDataSource.getRepository(Product);
     const deletedProduct = await productsRepository.delete(productID);
+
+    const redisClient = await createClient()
+      .on("error", (err) => console.log("Redis Client Error", err))
+      .connect();
+
+    await redisClient.del("products");
+    await redisClient.del("count");
+    await redisClient.disconnect();
 
     response.status(200).json({
       status: "success",

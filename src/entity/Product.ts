@@ -12,7 +12,7 @@ export class Product {
   @Column()
   price: number;
 
-  @Column()
+  @Column({ nullable: true })
   discountedPrice: number;
 
   @Column()
@@ -23,6 +23,15 @@ export class Product {
 
   @Column()
   brand: string;
+
+  @Column({ type: "varchar", nullable: true })
+  tag: string;
+
+  @Column({ type: "boolean", nullable: true })
+  isHotShot: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  img: string;
 
   @ManyToOne(() => Order, (order) => order.products)
   order: Order;
