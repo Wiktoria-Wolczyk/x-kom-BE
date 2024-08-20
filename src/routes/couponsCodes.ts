@@ -17,7 +17,7 @@ router.post("/", async (request, response) => {
   newCouponCode.value = body.value;
   newCouponCode.percentageValue = body.percentageValue;
   newCouponCode.code = body.code;
-  newCouponCode.name = body.couponName;
+  newCouponCode.name = body.name;
 
   const addedCouponCode = await AppDataSource.manager.save(newCouponCode);
 

@@ -7,7 +7,7 @@ import { Product } from "../entity/Product";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { CouponCode } from "../entity/CouponCode";
 import { RequestWithUser } from "../common/interfaces";
-import { In } from "typeorm";
+import { In, MoreThan } from "typeorm";
 
 const ordersRepository = AppDataSource.getRepository(Order);
 const usersRepository = AppDataSource.getRepository(User);
@@ -73,28 +73,10 @@ router.post("/", async (request, response) => {
   });
 });
 
-router.use((request, response, next) => {
-  tokenVerification(request, response, next);
-});
-
-router.get("/", async (request, response) => {
-  const [orders, count] = await ordersRepository.findAndCount();
-
-  response.status(200).json({
-    status: "Success",
-    message: {
-      orders,
-      count,
-    },
-  });
-});
-
 router.post("/calculate-price", async (request, response) => {
   try {
-    const { products } = request.body;
-
+    const { products, couponCode } = request.body;
     const productsIds = products.map((product) => product.id);
-
     const productsFromDatabase = await productsRepository.findBy({
       id: In(productsIds),
     });
@@ -122,6 +104,30 @@ router.post("/calculate-price", async (request, response) => {
       { discountedPrice: 0, price: 0 },
     );
 
+    if (couponCode) {
+      const coupon = await couponRepository.findOneBy({
+        code: couponCode,
+        endDate: MoreThan(new Date()),
+      });
+
+      if (!coupon) {
+        return response.status(400).json({
+          status: "Failed",
+          message: "Coupon is not available",
+        });
+      }
+
+      if (coupon.value) {
+        prices.discountedPrice =
+          (prices.discountedPrice || prices.price) - coupon.value;
+      } else {
+        prices.discountedPrice =
+          ((prices.discountedPrice || prices.price) *
+            (100 - coupon.percentageValue)) /
+          100;
+      }
+    }
+
     response.status(200).json({
       status: "Success",
       message: prices,
@@ -129,6 +135,22 @@ router.post("/calculate-price", async (request, response) => {
   } catch (err) {
     console.log("Error in calculate price: ", err);
   }
+});
+
+router.use((request, response, next) => {
+  tokenVerification(request, response, next);
+});
+
+router.get("/", async (request, response) => {
+  const [orders, count] = await ordersRepository.findAndCount();
+
+  response.status(200).json({
+    status: "Success",
+    message: {
+      orders,
+      count,
+    },
+  });
 });
 
 router.get("/:id", async (request, response) => {
