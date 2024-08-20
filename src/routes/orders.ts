@@ -7,6 +7,7 @@ import { Product } from "../entity/Product";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { CouponCode } from "../entity/CouponCode";
 import { RequestWithUser } from "../common/interfaces";
+import { In } from "typeorm";
 
 const ordersRepository = AppDataSource.getRepository(Order);
 const usersRepository = AppDataSource.getRepository(User);
@@ -86,6 +87,48 @@ router.get("/", async (request, response) => {
       count,
     },
   });
+});
+
+router.post("/calculate-price", async (request, response) => {
+  try {
+    const { products } = request.body;
+
+    const productsIds = products.map((product) => product.id);
+
+    const productsFromDatabase = await productsRepository.findBy({
+      id: In(productsIds),
+    });
+
+    const productsWithQuantities = productsFromDatabase.map((dbProduct) => {
+      const findProduct = products.find((el) => el.id === dbProduct.id);
+
+      if (dbProduct.id === findProduct.id) {
+        return { ...dbProduct, quantity: findProduct.quantity };
+      }
+    });
+
+    const prices = productsWithQuantities.reduce(
+      (acc, curr) => {
+        if (!curr.discountedPrice) {
+          acc.discountedPrice += curr.price * curr.quantity;
+        } else {
+          acc.discountedPrice += curr.discountedPrice * curr.quantity;
+        }
+
+        acc.price += curr.price * curr.quantity;
+
+        return acc;
+      },
+      { discountedPrice: 0, price: 0 },
+    );
+
+    response.status(200).json({
+      status: "Success",
+      message: prices,
+    });
+  } catch (err) {
+    console.log("Error in calculate price: ", err);
+  }
 });
 
 router.get("/:id", async (request, response) => {

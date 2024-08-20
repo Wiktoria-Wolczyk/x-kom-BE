@@ -4,7 +4,6 @@ import { AppDataSource } from "../database/data-source";
 import { Product } from "../entity/Product";
 import { tokenVerification } from "../middlewares/authMiddleware";
 import { Like } from "typeorm";
-import NodeCache from "node-cache";
 import { createClient } from "redis";
 
 const productsRepository = AppDataSource.getRepository(Product);
@@ -81,6 +80,22 @@ router.get("/:id", async (request, response) => {
   response.status(200).json({
     status: "success",
     message: product,
+  });
+});
+
+router.get("/promotions/hotshot", async (request, response) => {
+  // const hotShotProduct = await productsRepository
+  //   .createQueryBuilder("product")
+  //   .where("product.isHotShot = :isHotShot", { isHotShot: true })
+  //   .getOne();
+
+  const hotShotProduct = await productsRepository.findOneBy({
+    isHotShot: true,
+  });
+
+  response.status(200).json({
+    status: "success",
+    message: hotShotProduct,
   });
 });
 
