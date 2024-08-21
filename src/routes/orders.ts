@@ -118,13 +118,15 @@ router.post("/calculate-price", async (request, response) => {
       }
 
       if (coupon.value) {
-        prices.discountedPrice =
-          (prices.discountedPrice || prices.price) - coupon.value;
+        prices.discountedPrice = Math.round(
+          (prices.discountedPrice || prices.price) - coupon.value,
+        );
       } else {
-        prices.discountedPrice =
+        prices.discountedPrice = Math.round(
           ((prices.discountedPrice || prices.price) *
             (100 - coupon.percentageValue)) /
-          100;
+            100,
+        );
       }
     }
 
