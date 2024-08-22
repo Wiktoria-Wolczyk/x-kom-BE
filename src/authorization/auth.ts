@@ -12,10 +12,14 @@ router.post("/login", async (request, response) => {
   console.log("1", request.body);
   const findUser = await usersRepository.findOneBy({ email });
 
-  console.log("2", findUser);
+  if (!findUser) {
+    return response.status(404).json({
+      status: "failed",
+      message: "authorization failed",
+    });
+  }
 
-  //zamierzam stworzyc obiekt w ktorym bedzie user
-  //bez hasla i ten obiekt zwrocic w odpowiedzi
+  console.log("2", findUser);
 
   const comparePassword = compareSync(password, findUser.password);
   if (!comparePassword) {
