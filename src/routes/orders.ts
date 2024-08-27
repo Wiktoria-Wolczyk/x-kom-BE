@@ -14,6 +14,14 @@ const usersRepository = AppDataSource.getRepository(User);
 const productsRepository = AppDataSource.getRepository(Product);
 const couponRepository = AppDataSource.getRepository(CouponCode);
 
+const deliveryMethods = [
+  { name: "ups", price: 24.99 },
+  { name: "inpostCourier", price: 19.99 },
+  { name: "FedEx", price: 14.99 },
+  { name: "onsite", price: 0 },
+  { name: "inpost", price: 11.99 },
+];
+
 router.post("/", async (request, response) => {
   const body = request.body;
   const { userID, products: productsIDArray } = body;
@@ -75,7 +83,7 @@ router.post("/", async (request, response) => {
 
 router.post("/calculate-price", async (request, response) => {
   try {
-    const { products, couponCode, deliveryPrice } = request.body;
+    const { products, couponCode, deliveryMethod } = request.body;
     const productsIds = products.map((product) => product.id);
     const productsFromDatabase = await productsRepository.findBy({
       id: In(productsIds),
@@ -130,12 +138,23 @@ router.post("/calculate-price", async (request, response) => {
       }
     }
 
-    if (deliveryPrice) {
-      if (prices.discountedPrice) {
-        prices.discountedPrice = prices.discountedPrice + deliveryPrice;
-      } else {
-        prices.price = prices.price + deliveryPrice;
+    let priceOfMethod = 0;
+
+    if (deliveryMethod) {
+      const findPriceOfMethod = deliveryMethods.find(
+        ({ name }) => name === deliveryMethod,
+      );
+      if (findPriceOfMethod) {
+        priceOfMethod = findPriceOfMethod.price;
       }
+    }
+
+    if (prices.discountedPrice) {
+      prices.discountedPrice = Number(
+        (prices.discountedPrice + priceOfMethod).toFixed(2),
+      );
+    } else {
+      prices.price = Number((prices.price + priceOfMethod).toFixed(2));
     }
 
     response.status(200).json({
