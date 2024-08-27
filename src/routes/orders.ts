@@ -75,7 +75,7 @@ router.post("/", async (request, response) => {
 
 router.post("/calculate-price", async (request, response) => {
   try {
-    const { products, couponCode } = request.body;
+    const { products, couponCode, deliveryPrice } = request.body;
     const productsIds = products.map((product) => product.id);
     const productsFromDatabase = await productsRepository.findBy({
       id: In(productsIds),
@@ -127,6 +127,14 @@ router.post("/calculate-price", async (request, response) => {
             (100 - coupon.percentageValue)) /
             100,
         );
+      }
+    }
+
+    if (deliveryPrice) {
+      if (prices.discountedPrice) {
+        prices.discountedPrice = prices.discountedPrice + deliveryPrice;
+      } else {
+        prices.price = prices.price + deliveryPrice;
       }
     }
 
