@@ -3,7 +3,7 @@ const router = express.Router();
 import { AppDataSource } from "../database/data-source";
 import { Product } from "../entity/Product";
 import { tokenVerification } from "../middlewares/authMiddleware";
-import { Like } from "typeorm";
+import { IsNull, Like } from "typeorm";
 import { createClient } from "redis";
 
 const productsRepository = AppDataSource.getRepository(Product);
@@ -96,6 +96,35 @@ router.get("/promotions/hotshot", async (request, response) => {
   response.status(200).json({
     status: "success",
     message: hotShotProduct,
+  });
+});
+
+router.get("/fixed/products", async (request, response) => {
+  // pobrać wszystkie produkty które nie mają ceny ani discountedPrice.
+  // Każdemu z nich zaktualizować price o wartość randomową 1000 - 2000 zł (zakres cenowy).
+  // zaktualizować wszystkie te produkty w bazie.
+  const productWithoutPrice = await productsRepository.find({
+    where: { price: IsNull(), discountedPrice: IsNull() },
+  });
+
+  if (productWithoutPrice.length > 0) {
+    for (const product of productWithoutPrice) {
+      const price = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
+      await productsRepository.update({ id: product.id }, { price: price });
+    }
+  }
+
+  const redisClient = await createClient()
+    .on("error", (err) => console.log("Redis Client Error", err))
+    .connect();
+
+  await redisClient.del("products");
+  await redisClient.del("count");
+  await redisClient.disconnect();
+
+  return response.status(200).json({
+    status: "success",
+    message: "xyz",
   });
 });
 

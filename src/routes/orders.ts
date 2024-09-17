@@ -22,6 +22,11 @@ const deliveryMethods = [
   { name: "inpost", price: 11.99 },
 ];
 
+router.get("/migrate/remove", async () => {
+  const orders = await ordersRepository.find();
+  await Promise.all(orders.map((order) => ordersRepository.remove(order)));
+});
+
 router.post("/", async (request, response) => {
   const body = request.body;
   const { userID, products: productsIDArray } = body;
@@ -35,7 +40,6 @@ router.post("/", async (request, response) => {
   });
 
   let sum = 0;
-
   const productsArray = await Promise.all(
     productsIDArray.map(async (el) => {
       const productsByID = await productsRepository.findOneBy({
@@ -44,9 +48,10 @@ router.post("/", async (request, response) => {
 
       const countOfQuantity = el.quantity;
 
-      const discountedPrice = productsByID.discountedPrice * countOfQuantity;
+      const price =
+        (productsByID.discountedPrice || productsByID.price) * countOfQuantity;
 
-      sum += discountedPrice;
+      sum += price;
       return productsByID;
     }),
   );
@@ -59,11 +64,11 @@ router.post("/", async (request, response) => {
   const newSumPercentageValue = sum - mathSumPercentageValue;
 
   if (body.couponCode && findCoupon.value) {
-    newOrder.price = newSumValue;
+    newOrder.price = Number(newSumValue.toFixed(2));
   } else if (body.couponCode && findCoupon.percentageValue) {
-    newOrder.price = newSumPercentageValue;
+    newOrder.price = Number(newSumPercentageValue.toFixed(2));
   } else {
-    newOrder.price = sum;
+    newOrder.price = Number(sum.toFixed(2));
   }
 
   newOrder.createDate = body.createDate;
@@ -109,7 +114,7 @@ router.post("/calculate-price", async (request, response) => {
 
         return acc;
       },
-      { discountedPrice: 0, price: 0 },
+      { discountedPrice: 0, price: 0, deliveryPrice: 0 },
     );
 
     if (couponCode) {
@@ -138,24 +143,26 @@ router.post("/calculate-price", async (request, response) => {
       }
     }
 
-    let priceOfMethod = 0;
-
     if (deliveryMethod) {
-      const findPriceOfMethod = deliveryMethods.find(
+      const deliveryCompany = deliveryMethods.find(
         ({ name }) => name === deliveryMethod,
       );
-      if (findPriceOfMethod) {
-        priceOfMethod = findPriceOfMethod.price;
+      if (deliveryCompany) {
+        prices.deliveryPrice = deliveryCompany.price;
       }
     }
 
     if (prices.discountedPrice) {
-      prices.discountedPrice = Number(
-        (prices.discountedPrice + priceOfMethod).toFixed(2),
-      );
+      prices.discountedPrice = Number(prices.discountedPrice.toFixed(2));
     } else {
-      prices.price = Number((prices.price + priceOfMethod).toFixed(2));
+      prices.price = Number(prices.price.toFixed(2));
     }
+
+    // savedMoney = Math.round(
+    //   priceAndDiscountedPriceWithValidCoupon.price -
+    //     priceAndDiscountedPriceWithValidCoupon.discountedPrice ||
+    //     priceAndDiscountedPrice.price - priceAndDiscountedPrice.discountedPrice,
+    // );
 
     response.status(200).json({
       status: "Success",
@@ -171,7 +178,9 @@ router.use((request, response, next) => {
 });
 
 router.get("/", async (request, response) => {
-  const [orders, count] = await ordersRepository.findAndCount();
+  const [orders, count] = await ordersRepository.findAndCount({
+    relations: { products: true },
+  });
 
   response.status(200).json({
     status: "Success",

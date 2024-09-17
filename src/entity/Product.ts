@@ -9,7 +9,7 @@ export class Product {
   @Column()
   name: string;
 
-  @Column()
+  @Column("numeric", { nullable: true })
   price: number;
 
   @Column({ nullable: true })
@@ -33,6 +33,6 @@ export class Product {
   @Column({ type: "varchar", nullable: true })
   img: string;
 
-  @ManyToOne(() => Order, (order) => order.products)
-  order: Order;
+  // @ManyToOne(() => Order, (order) => order.products)
+  // order: Order;
 }

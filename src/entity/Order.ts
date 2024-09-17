@@ -6,6 +6,8 @@ import {
   UpdateDateColumn,
   OneToMany,
   ManyToOne,
+  ManyToMany,
+  JoinTable,
 } from "typeorm";
 import { User } from "./User";
 import { Product } from "./Product";
@@ -27,12 +29,13 @@ export class Order {
   @Column({ nullable: true })
   status: string;
 
-  @Column({ nullable: true })
+  @Column("decimal", { nullable: true })
   price: number;
 
   @ManyToOne(() => User, (user) => user.orders)
   user: User;
 
-  @OneToMany(() => Product, (product) => product.order)
+  @ManyToMany(() => Product)
+  @JoinTable()
   products: Product[];
 }
